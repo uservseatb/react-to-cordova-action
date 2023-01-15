@@ -1,10 +1,10 @@
 name: 'react to cordova'
 description: 'Prepare cordova src from react'
 inputs:
-  who-to-greet:  # id of input
-    description: 'Who to greet'
-    required: true
-    default: 'World'
+  build-dir:
+    description: 'Folder where the react app build is located'
+    required: false
+    default: 'dist'
 runs:
   using: 'node16'
   main: 'dist/index.js'

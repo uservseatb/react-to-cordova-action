@@ -9774,13 +9774,51 @@ var __webpack_exports__ = {};
 (() => {
 const core = __nccwpck_require__(8864);
 const github = __nccwpck_require__(6366);
+const fs = __nccwpck_require__(7147);
 
 try {
     console.log(`The event payload 12`);
-
+    const buildDir = core.getInput('build-dir');
+    const walkBuildDir = walk(buildDir)
+    let jsFiles = walkBuildDir.filter((f) => f.endsWith(".js"));
+    let htmlFiles = walkBuildDir.filter((f) => f.endsWith(".html"));
+    console.log(jsFiles)
+    console.log(htmlFiles)
+    const jsFile = fs.readFileSync(jsFiles[0])
+    console.log(jsFile)
 } catch (error) {
     core.setFailed(error.message);
 }
+
+function walk(dir) {
+    let results = [];
+    const list = fs.readdirSync(dir);
+    list.forEach(function (file) {
+        file = dir + '/' + file;
+        const stat = fs.statSync(file);
+        if (stat && stat.isDirectory()) {
+            results = results.concat(walk(file));
+        } else {
+            results.push(file);
+        }
+    });
+    return results;
+}
+
+// }
+
+// document.addEventListener('deviceready', startApp, false)
+
+
+// const root = ReactDOM.createRoot(
+//     document.getElementById('app-container')
+// );
+//
+// root.render(
+//     <React.StrictMode>
+//         <App/>
+//     </React.StrictMode>
+// );
 })();
 
 module.exports = __webpack_exports__;
