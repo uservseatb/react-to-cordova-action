@@ -9776,7 +9776,7 @@ const core = __nccwpck_require__(8864);
 const github = __nccwpck_require__(6366);
 
 try {
-    console.log(`The event payload`);
+    console.log(`The event payload 12`);
 
 } catch (error) {
     core.setFailed(error.message);
