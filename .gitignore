@@ -1,3 +1,4 @@
-.idea
+.idea/
 node_modules
 build_before_push.sh
+tmp/
