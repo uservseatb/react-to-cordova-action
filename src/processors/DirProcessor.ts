@@ -4,16 +4,8 @@ import {UpdateFileProcessor} from "./UpdateFileProcessor";
 import {ReactAppJsToCordovaTransformer} from "./ReactAppJsToCordovaTransformer";
 import {ReactAppHtmlToCordovaTransformer} from "./ReactAppHtmlToCordovaTransformer";
 
-const RENDER_PART = '.render('
-const GET_ELEMENT_BY_ID_PART = '.getElementById('
-const CREATE_ROOT_PART = '.createRoot('
-const TO_BE_FIND_IN_JS = [RENDER_PART, GET_ELEMENT_BY_ID_PART, CREATE_ROOT_PART]
-const ADD_JS_BEFORE = "document.addEventListener(\"deviceready\",(function(){"
-const ADD_JS_AFTER = "}),!1)"
-const ADD_HTML = "<script src='cordova.js'></script>"
-
-
 export function processDir(dirName: string) {
+    console.log("start process")
     const transformers = {
         "js": new ReactAppJsToCordovaTransformer(),
         "html": new ReactAppHtmlToCordovaTransformer()

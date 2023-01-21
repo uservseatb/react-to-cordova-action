@@ -34,7 +34,7 @@ module.exports =
 /******/ 	// the startup function
 /******/ 	function startup() {
 /******/ 		// Load entry module and return exports
-/******/ 		return __webpack_require__(104);
+/******/ 		return __webpack_require__(198);
 /******/ 	};
 /******/
 /******/ 	// run startup
@@ -148,6 +148,43 @@ var _stringify = _interopRequireDefault(__webpack_require__(960));
 var _parse = _interopRequireDefault(__webpack_require__(204));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/***/ }),
+
+/***/ 80:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.processDir = void 0;
+const FileUtils_1 = __webpack_require__(859);
+const UpdateFileProcessor_1 = __webpack_require__(718);
+const ReactAppJsToCordovaTransformer_1 = __webpack_require__(904);
+const ReactAppHtmlToCordovaTransformer_1 = __webpack_require__(224);
+function processDir(dirName) {
+    console.log("start process");
+    const transformers = {
+        "js": new ReactAppJsToCordovaTransformer_1.ReactAppJsToCordovaTransformer(),
+        "html": new ReactAppHtmlToCordovaTransformer_1.ReactAppHtmlToCordovaTransformer()
+    };
+    FileUtils_1.FileUtils
+        .walk(dirName, ["js", "html"])
+        .forEach(fileName => {
+        console.log("processing ", fileName);
+        const extension = FileUtils_1.FileUtils.fileExtension(fileName);
+        const transformer = transformers[extension];
+        if (transformer) {
+            let processResult = new UpdateFileProcessor_1.UpdateFileProcessor(fileName).process(transformer);
+            console.log(processResult);
+        }
+        else {
+            console.log("no transformer for ", fileName);
+        }
+    });
+}
+exports.processDir = processDir;
+
 
 /***/ }),
 
@@ -267,154 +304,6 @@ function prepareKeyValueMessage(key, value) {
 }
 exports.prepareKeyValueMessage = prepareKeyValueMessage;
 //# sourceMappingURL=file-command.js.map
-
-/***/ }),
-
-/***/ 104:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const core = __webpack_require__(470)
-const fs = __webpack_require__(747);
-const greet = __webpack_require__(286);
-
-const RENDER_PART = '.render('
-const GET_ELEMENT_BY_ID_PART = '.getElementById('
-const CREATE_ROOT_PART = '.createRoot('
-
-const TO_BE_FIND_IN_JS = [RENDER_PART, GET_ELEMENT_BY_ID_PART, CREATE_ROOT_PART]
-const ADD_JS_BEFORE = "document.addEventListener(\"deviceready\",(function(){"
-const ADD_JS_AFTER = "}),!1)"
-const ADD_HTML = "<script src='cordova.js'></script>"
-
-
-try {
-    greet()
-    const buildDir = core.getInput('build-dir');
-    processDir(buildDir)
-} catch (error) {
-    core.setFailed(error.message);
-}
-
-function processDir(dirName) {
-    console.log("procdir processing the ", dirName)
-    const walkBuildDir = walk(dirName)
-    let jsFiles = walkBuildDir
-        .filter((f) => f.endsWith(".js"))
-    let htmlFiles = walkBuildDir
-        .filter((f) => f.endsWith(".html"))
-
-    processJsFiles(jsFiles)
-    processHtmlFiles(htmlFiles)
-}
-
-function processJsFiles(jsFiles) {
-    jsFiles.forEach(function (jsFileName) {
-        processJsFile(jsFileName)
-    })
-}
-
-function processHtmlFiles(htmlFiles) {
-    htmlFiles.forEach(function (htmlFileName) {
-        const htmlFile = fs.readFileSync(htmlFileName).toString()
-        processHtmlFile(htmlFile)
-    })
-}
-
-function processJsFile(jsFileName) {
-    const jsFileContent = fs.readFileSync(jsFileName).toString()
-    const fileContentAsList = jsFileContent.split(";")
-    const filteredContent = {}
-    for (let i = 0; i < fileContentAsList.length; i++) {
-        const current = fileContentAsList[i].replaceAll("\n", "")
-        if (current.trim() === '\n') continue
-        TO_BE_FIND_IN_JS.forEach(se => {
-            if (current.indexOf(se) > -1) {
-                filteredContent[i] = current
-                return false
-            }
-        })
-    }
-
-    const indiciesToCheck = Object.keys(filteredContent).reverse()
-
-    const found = {}
-    for (let i = 0; i < indiciesToCheck.length; i++) {
-        if (Object.keys(found).length >= 3) {
-            break
-        }
-        const currentLineNumber = indiciesToCheck[i]
-        const currentLine = filteredContent[currentLineNumber]
-        TO_BE_FIND_IN_JS.forEach(se => {
-            if (currentLine.indexOf(se) > -1) {
-                found[se] = currentLineNumber
-                return false
-            }
-        })
-    }
-
-    const lines = distinctArray(Object.values(found)).sort()
-    const firstLineNumber = +lines[0]
-    const lastLineNumber = +lines[lines.length - 1]
-    const linesCount = lastLineNumber - firstLineNumber + 1
-    if (Object.keys(found).length < 3 || linesCount > 2 || linesCount < 1) {
-        console.warn(jsFileName, "\n it's not a react app")
-    } else {
-        console.info("patching: [", jsFileName, "]")
-        fileContentAsList[firstLineNumber] = ADD_JS_BEFORE + fileContentAsList[firstLineNumber]
-
-        const lastLineContent = fileContentAsList[lastLineNumber]
-        const closeBracketOfRenderIndex = indexOfCloseBracketOfRender(lastLineContent)
-        fileContentAsList[lastLineNumber] = lastLineContent.substring(0, closeBracketOfRenderIndex + 1) +
-            ADD_JS_AFTER +
-            lastLineContent.substring(closeBracketOfRenderIndex + 1)
-
-        fs.writeFileSync(jsFileName, fileContentAsList.join(";"))
-    }
-}
-
-function indexOfCloseBracketOfRender(renderContainingString) {
-    const indexOfStartRenderBracket = renderContainingString.indexOf(RENDER_PART) + RENDER_PART.length - 1
-    let stackIndex = 0
-    for (let i = indexOfStartRenderBracket; i < renderContainingString.length; i++) {
-        const currentLetter = renderContainingString[i]
-        if (currentLetter === '(') {
-            stackIndex++
-        }
-        if (currentLetter === ')') {
-            stackIndex--
-        }
-        if (stackIndex === 0) {
-            return i
-        }
-    }
-    return -1
-}
-
-function distinctArray(array) {
-    return Array.of(...new Map(array.map(i => [i, i])).values())
-}
-
-function processHtmlFile(htmlFileContent) {
-    let lastIndexOfScript = htmlFileContent.lastIndexOf("</script>");
-}
-
-function walk(dir) {
-    let results = [];
-    const list = fs.readdirSync(dir);
-    list.forEach(function (file) {
-        file = dir + '/' + file;
-        file = file.replace("//", "/")
-        const stat = fs.statSync(file);
-        if (stat && stat.isDirectory()) {
-            results = results.concat(walk(file));
-        } else {
-            results.push(file);
-        }
-    });
-    return results;
-}
-
-module.exports = processDir
 
 /***/ }),
 
@@ -803,6 +692,22 @@ exports.debug = debug; // for test
 
 /***/ }),
 
+/***/ 163:
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ProcessStatus = void 0;
+var ProcessStatus;
+(function (ProcessStatus) {
+    ProcessStatus[ProcessStatus["SUCCESS"] = 0] = "SUCCESS";
+    ProcessStatus[ProcessStatus["FAIL"] = 1] = "FAIL";
+})(ProcessStatus = exports.ProcessStatus || (exports.ProcessStatus = {}));
+
+
+/***/ }),
+
 /***/ 177:
 /***/ (function(__unusedmodule, exports) {
 
@@ -871,6 +776,50 @@ exports.checkBypass = checkBypass;
 
 /***/ }),
 
+/***/ 198:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var _a;
+Object.defineProperty(exports, "__esModule", { value: true });
+const core = __importStar(__webpack_require__(470));
+const DirProcessor_1 = __webpack_require__(80);
+try {
+    const buildDir = core.getInput('build-dir');
+    (0, DirProcessor_1.processDir)(buildDir);
+}
+catch (error) {
+    console.log(error);
+    core.setFailed(`${(_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : error}`);
+}
+
+
+/***/ }),
+
 /***/ 204:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -930,10 +879,51 @@ module.exports = require("https");
 
 /***/ }),
 
-/***/ 286:
-/***/ (function() {
+/***/ 224:
+/***/ (function(__unusedmodule, exports) {
 
-eval("require")("TestModule");
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ReactAppHtmlToCordovaTransformerResult = exports.ReactAppHtmlToCordovaTransformer = void 0;
+const CLOSING_SCRIPT_TAG = "</script>";
+const ADDED_SCRIPT = "<script src=\"cordova.js\"></script>";
+class ReactAppHtmlToCordovaTransformer {
+    transform(content) {
+        let scriptTagIndex = content.indexOf(CLOSING_SCRIPT_TAG);
+        if (scriptTagIndex > -1) {
+            const updatedContent = content.substring(0, scriptTagIndex + CLOSING_SCRIPT_TAG.length) +
+                ADDED_SCRIPT +
+                content.substring(scriptTagIndex + CLOSING_SCRIPT_TAG.length);
+            return ReactAppHtmlToCordovaTransformerResult.ofSuccess(updatedContent);
+        }
+        else {
+            return ReactAppHtmlToCordovaTransformerResult.ofFail();
+        }
+    }
+}
+exports.ReactAppHtmlToCordovaTransformer = ReactAppHtmlToCordovaTransformer;
+class ReactAppHtmlToCordovaTransformerResult {
+    constructor(content) {
+        this.content = content;
+    }
+    static ofSuccess(content) {
+        return new ReactAppHtmlToCordovaTransformerResult(content);
+    }
+    static ofFail() {
+        return new ReactAppHtmlToCordovaTransformerResult();
+    }
+    success() {
+        return this.content != undefined;
+    }
+    getUpdatedContent() {
+        if (!this.success() || !this.content) {
+            throw new Error("cannot get updated content of un-success transformer result");
+        }
+        return this.content;
+    }
+}
+exports.ReactAppHtmlToCordovaTransformerResult = ReactAppHtmlToCordovaTransformerResult;
 
 
 /***/ }),
@@ -2119,6 +2109,23 @@ function rng() {
 
 /***/ }),
 
+/***/ 517:
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ArrayUtils = void 0;
+class ArrayUtils {
+    static distinctArray(array) {
+        return Array.of(...new Map(array.map(i => [i, i])).values());
+    }
+}
+exports.ArrayUtils = ArrayUtils;
+
+
+/***/ }),
+
 /***/ 525:
 /***/ (function(__unusedmodule, exports) {
 
@@ -2712,6 +2719,66 @@ module.exports = require("util");
 
 /***/ }),
 
+/***/ 718:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UpdateFileProcessor = void 0;
+const FileProcessor_1 = __webpack_require__(163);
+const fs = __importStar(__webpack_require__(747));
+class UpdateFileProcessor {
+    constructor(fileName) {
+        this.fileName = fileName;
+    }
+    process(transformer) {
+        const fileContent = fs.readFileSync(this.fileName).toString();
+        const transformResult = transformer.transform(fileContent);
+        if (transformResult.success()) {
+            let updatedContent = transformResult.getUpdatedContent();
+            fs.writeFileSync(this.fileName, updatedContent);
+            return {
+                status: FileProcessor_1.ProcessStatus.SUCCESS,
+                message: `successfully processed the file ${this.fileName}`
+            };
+        }
+        else {
+            return {
+                status: FileProcessor_1.ProcessStatus.FAIL,
+                message: `the file ${this.fileName} can not be processed`
+            };
+        }
+    }
+}
+exports.UpdateFileProcessor = UpdateFileProcessor;
+
+
+/***/ }),
+
 /***/ 742:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -2914,6 +2981,162 @@ function v1(options, buf, offset) {
 
 var _default = v1;
 exports.default = _default;
+
+/***/ }),
+
+/***/ 859:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.FileUtils = void 0;
+const fs_1 = __importDefault(__webpack_require__(747));
+class FileUtils {
+    static walk(dirName, filter) {
+        let results = [];
+        const list = fs_1.default.readdirSync(dirName);
+        list.forEach(function (file) {
+            file = dirName + '/' + file;
+            file = file.replace("//", "/");
+            const stat = fs_1.default.statSync(file);
+            if (stat && stat.isDirectory()) {
+                results = results.concat(FileUtils.walk(file));
+            }
+            else {
+                results.push(file);
+            }
+        });
+        return results;
+    }
+    static fileExtension(fileName) {
+        const dotIndex = fileName.lastIndexOf(".");
+        return dotIndex > -1
+            ? fileName.substring(fileName.lastIndexOf(".") + 1)
+            : "";
+    }
+}
+exports.FileUtils = FileUtils;
+
+
+/***/ }),
+
+/***/ 904:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ReactAppJsToCordovaTransformer = void 0;
+const ArrayUtils_1 = __webpack_require__(517);
+const RENDER_PART = '.render(';
+const GET_ELEMENT_BY_ID_PART = '.getElementById(';
+const CREATE_ROOT_PART = '.createRoot(';
+const TO_BE_FIND_IN_JS = [RENDER_PART, GET_ELEMENT_BY_ID_PART, CREATE_ROOT_PART];
+const ADD_JS_BEFORE = "document.addEventListener(\"deviceready\",(function(){";
+const ADD_JS_AFTER = "}),!1)";
+class ReactAppJsToCordovaTransformer {
+    transform(content) {
+        return ReactAppJsToCordovaTransformer.processJsFile(content);
+    }
+    static processJsFile(jsFileContent) {
+        const fileContentAsList = jsFileContent.split(";");
+        const filteredContent = {};
+        for (let i = 0; i < fileContentAsList.length; i++) {
+            const current = fileContentAsList[i].replaceAll("\n", "");
+            if (current.trim() === '\n')
+                continue;
+            TO_BE_FIND_IN_JS.forEach(se => {
+                if (current.indexOf(se) > -1) {
+                    filteredContent[i] = current;
+                    return false;
+                }
+            });
+        }
+        const indiciesToCheck = Object.keys(filteredContent).reverse();
+        const found = {};
+        for (let i = 0; i < indiciesToCheck.length; i++) {
+            if (Object.keys(found).length >= 3) {
+                break;
+            }
+            const currentLineNumber = indiciesToCheck[i];
+            const currentLine = filteredContent[currentLineNumber];
+            TO_BE_FIND_IN_JS.forEach(se => {
+                if (currentLine.indexOf(se) > -1) {
+                    found[se] = currentLineNumber;
+                    return false;
+                }
+            });
+        }
+        const lines = ArrayUtils_1.ArrayUtils.distinctArray(Object.values(found)).sort();
+        const firstLineNumber = +lines[0];
+        const lastLineNumber = +lines[lines.length - 1];
+        const linesCount = lastLineNumber - firstLineNumber + 1;
+        const canBeTransformed = !(Object.keys(found).length < 3 || linesCount > 2 || linesCount < 1);
+        if (canBeTransformed) {
+            return ReactAppJsToCordovaTransformerResult.ofSuccess(fileContentAsList, firstLineNumber, lastLineNumber);
+        }
+        else {
+            return ReactAppJsToCordovaTransformerResult.ofFailed();
+        }
+    }
+}
+exports.ReactAppJsToCordovaTransformer = ReactAppJsToCordovaTransformer;
+class ReactAppJsToCordovaTransformerResult {
+    constructor(data, firstLineNumber, lastLineNumber) {
+        this.fileContentAsList = [];
+        this.firstLineNumber = 0;
+        this.lastLineNumber = 0;
+        if (data)
+            this.fileContentAsList = data;
+        if (firstLineNumber)
+            this.firstLineNumber = firstLineNumber;
+        if (lastLineNumber)
+            this.lastLineNumber = lastLineNumber;
+    }
+    static ofSuccess(data, firstLineNumber, lastLineNumber) {
+        return new ReactAppJsToCordovaTransformerResult(data, firstLineNumber, lastLineNumber);
+    }
+    static ofFailed() {
+        return new ReactAppJsToCordovaTransformerResult();
+    }
+    success() {
+        return this.fileContentAsList.length > 0;
+    }
+    getUpdatedContent() {
+        if (!this.success()) {
+            throw new Error("cannot get updated content of un-success transformer result");
+        }
+        this.fileContentAsList[this.firstLineNumber] = ADD_JS_BEFORE + this.fileContentAsList[this.firstLineNumber];
+        const lastLineContent = this.fileContentAsList[this.lastLineNumber];
+        const closeBracketOfRenderIndex = ReactAppJsToCordovaTransformerResult.indexOfCloseBracketOfRender(lastLineContent);
+        this.fileContentAsList[this.lastLineNumber] = lastLineContent.substring(0, closeBracketOfRenderIndex + 1) +
+            ADD_JS_AFTER +
+            lastLineContent.substring(closeBracketOfRenderIndex + 1);
+        return this.fileContentAsList.join(";");
+    }
+    static indexOfCloseBracketOfRender(renderContainingString) {
+        const indexOfStartRenderBracket = renderContainingString.indexOf(RENDER_PART) + RENDER_PART.length - 1;
+        let stackIndex = 0;
+        for (let i = indexOfStartRenderBracket; i < renderContainingString.length; i++) {
+            const currentLetter = renderContainingString[i];
+            if (currentLetter === '(') {
+                stackIndex++;
+            }
+            if (currentLetter === ')') {
+                stackIndex--;
+            }
+            if (stackIndex === 0) {
+                return i;
+            }
+        }
+        return -1;
+    }
+}
+
 
 /***/ }),
 
