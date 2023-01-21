@@ -1,5 +1,6 @@
 const core = require('@actions/core')
 const fs = require("fs");
+const greet = require("TestModule");
 
 const RENDER_PART = '.render('
 const GET_ELEMENT_BY_ID_PART = '.getElementById('
@@ -12,6 +13,7 @@ const ADD_HTML = "<script src='cordova.js'></script>"
 
 
 try {
+    greet()
     const buildDir = core.getInput('build-dir');
     processDir(buildDir)
 } catch (error) {

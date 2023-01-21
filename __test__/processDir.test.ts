@@ -1,6 +1,6 @@
-const processDir = require("../index")
-const fs = require("fs")
-const path = require('path')
+import {processDir} from '../src/processors/DirProcessor'
+import * as path from 'path'
+import * as fs from 'fs'
 
 const expectDevFragmentCodeReworked = "/* harmony import */ var _components_App_App__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./components/App/App */ \"./src/components/App/App.tsx\");document.addEventListener(\"deviceready\",(function(){\n" +
     "\n" +
@@ -13,9 +13,6 @@ const expectDevFragmentCodeReworked = "/* harmony import */ var _components_App_
     "/******/ })()\n" +
     ";"
 const expectProdFragmentCodeReworked = "\"version-dev mobile-hide tab-hide small-hide\"},{children:\"Планировщик покупок v0.3.7a\"}))}))}))})]}))]}))})}));document.addEventListener(\"deviceready\",(function(){e.createRoot(document.getElementById(\"app-container\")).render(t.createElement(t.StrictMode,null,t.createElement(la,null)))}),!1)}()}();"
-
-const expectDevCodeReworked = ""
-const expectProdCodeReworked = ""
 
 const TEST_DIR_PATH = path.resolve("__test__") + "/"
 
@@ -46,6 +43,6 @@ test("should refactor react code into cordova code", function () {
 
 function cleanTmp() {
     if (fs.existsSync("tmp",)) {
-        fs.rmdirSync("tmp", {recursive: true, force: true})
+        fs.rmSync("tmp", {recursive: true})
     }
 }

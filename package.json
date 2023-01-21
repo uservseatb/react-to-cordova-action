@@ -1,35 +1,48 @@
 {
-  "name": "react-to-cordova-action",
-  "version": "1.0.0",
-  "description": "a description",
-  "main": "index.js",
+  "name": "checkout",
+  "version": "3.2.0",
+  "description": "checkout action",
+  "main": "lib/main.js",
   "scripts": {
-    "lint": "eslint .",
-    "prepare": "ncc build index.js -o dist --source-map --license licenses.txt",
-    "test": "jest",
-    "all": "npm run lint && npm run prepare && npm run test"
+    "build": "tsc && ncc build",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/uservseatb/react-to-cordova-action.git"
+    "url": "git+https://github.com/actions/checkout.git",
+    "test": "jest"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "github",
+    "actions",
+    "checkout"
+  ],
+  "author": "GitHub",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/uservseatb/react-to-cordova-action/issues"
+    "url": "https://github.com/actions/checkout/issues"
   },
-  "homepage": "https://github.com/uservseatb/react-to-cordova-action#readme",
+  "homepage": "https://github.com/actions/checkout#readme",
   "dependencies": {
     "@actions/core": "^1.10.0",
-    "@actions/github": "^5.1.1",
-    "@vercel/ncc": "^0.36.0",
-    "fs": "^0.0.1-security"
+    "@actions/exec": "^1.0.1",
+    "@actions/github": "^2.2.0",
+    "@actions/io": "^1.1.2",
+    "@actions/tool-cache": "^1.1.2",
+    "uuid": "^3.3.3"
   },
   "devDependencies": {
-    "jest": "^29.3.1",
-    "jest-editor-support": "^30.3.1",
-    "@vercel/ncc": "^0.31.1",
-    "eslint": "^8.0.0"
+    "@types/jest": "^27.0.7",
+    "@types/node": "^18.11.18",
+    "@types/uuid": "^3.4.6",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "@zeit/ncc": "^0.20.5",
+    "jest": "^27.3.0",
+    "jest-circus": "^27.3.0",
+    "js-yaml": "^3.13.1",
+    "prettier": "^1.19.1",
+    "ts-jest": "^27.0.7",
+    "typescript": "^4.4.4"
   }
 }
