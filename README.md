@@ -1,23 +1,16 @@
-# Hello world javascript action
+# React to cordova action
 
-This action prints "Hello World" or "Hello" + the name of a person to greet to the log.
+This action patches a react app's files in order to be able to use them as is in a cordova app 
 
 ## Inputs
 
-### `who-to-greet`
-
-**Required** The name of the person to greet. Default `"World"`.
-
-## Outputs
-
-### `time`
-
-The time we greeted you.
+### `build-dir`
+**Required** The name of the directory the build of react app is located `"dist" | "build""`.
 
 ## Example usage
 
 ```yaml
-uses: uservseatb/react-to-cordova-action@v1.4
+uses: uservseatb/react-to-cordova-action@v1.0
 with:
   build-dir: 'dist'
 ```
