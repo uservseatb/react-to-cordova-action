@@ -15,6 +15,10 @@ export class ReactAppHtmlToCordovaTransformer implements Transformer {
             return ReactAppHtmlToCordovaTransformerResult.ofFail();
         }
     }
+
+    acceptedFileExtensions(): string[] {
+        return ['html'];
+    }
 }
 
 export class ReactAppHtmlToCordovaTransformerResult implements TransformerResult {

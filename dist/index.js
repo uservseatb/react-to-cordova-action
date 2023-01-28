@@ -159,15 +159,30 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.processDir = void 0;
 const FileUtils_1 = __webpack_require__(859);
-const UpdateFileProcessor_1 = __webpack_require__(718);
-const ReactAppJsToCordovaTransformer_1 = __webpack_require__(904);
 const ReactAppHtmlToCordovaTransformer_1 = __webpack_require__(224);
-function processDir(dirName) {
+const ReactAppJsToCordovaTransformer_1 = __webpack_require__(904);
+const UpdateFileProcessor_1 = __webpack_require__(718);
+const CordovaConfigXmlSetVersionTransformer_1 = __webpack_require__(386);
+function processDir(dirName, transformerNames, tagName) {
     console.log("start process");
-    const transformers = {
-        "js": new ReactAppJsToCordovaTransformer_1.ReactAppJsToCordovaTransformer(),
-        "html": new ReactAppHtmlToCordovaTransformer_1.ReactAppHtmlToCordovaTransformer()
+    const availableTransformers = {
+        "reactjs": new ReactAppJsToCordovaTransformer_1.ReactAppJsToCordovaTransformer(),
+        "reacthtml": new ReactAppHtmlToCordovaTransformer_1.ReactAppHtmlToCordovaTransformer(),
+        "cordovaconfig": new CordovaConfigXmlSetVersionTransformer_1.CordovaConfigXmlSetVersionTransformer({ version: tagName })
     };
+    const transformers = {};
+    transformerNames
+        .flatMap(tn => {
+        const transformer = availableTransformers[tn];
+        const extensions = transformer.acceptedFileExtensions();
+        return extensions.map(ext => {
+            return [ext, transformer];
+        });
+    })
+        .forEach(mapping => {
+        transformers[mapping[0]] = mapping[1];
+    });
+    console.log(transformers);
     FileUtils_1.FileUtils
         .walk(dirName, ["js", "html"])
         .forEach(fileName => {
@@ -810,7 +825,12 @@ const core = __importStar(__webpack_require__(470));
 const DirProcessor_1 = __webpack_require__(80);
 try {
     const buildDir = core.getInput('build-dir');
-    (0, DirProcessor_1.processDir)(buildDir);
+    let transformers = core.getInput('transformers');
+    if (!transformers) {
+        transformers = "reactjs,reacthtml";
+    }
+    let cordovaAppVersion = core.getInput('cordova-app-version');
+    (0, DirProcessor_1.processDir)(buildDir, transformers.split(","), cordovaAppVersion);
 }
 catch (error) {
     console.log(error);
@@ -900,6 +920,9 @@ class ReactAppHtmlToCordovaTransformer {
         else {
             return ReactAppHtmlToCordovaTransformerResult.ofFail();
         }
+    }
+    acceptedFileExtensions() {
+        return ['html'];
     }
 }
 exports.ReactAppHtmlToCordovaTransformer = ReactAppHtmlToCordovaTransformer;
@@ -1006,6 +1029,68 @@ exports.default = _default;
 /***/ (function(module) {
 
 module.exports = require("assert");
+
+/***/ }),
+
+/***/ 386:
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CordovaConfigXmlSetVersionTransformer = void 0;
+const MARK_OF_THE_CORDOVA_CONFIG_FILE = 'xmlns:cdv="http://cordova.apache.org';
+const VERSION_PART = 'version="';
+class CordovaConfigXmlSetVersionTransformer {
+    constructor(context) {
+        this.context = context;
+    }
+    transform(content) {
+        return this.processCordovaConfigXmlFile(content);
+    }
+    acceptedFileExtensions() {
+        return ['xml'];
+    }
+    processCordovaConfigXmlFile(fileContent) {
+        const isCordovaXmlConfigFile = fileContent.indexOf(MARK_OF_THE_CORDOVA_CONFIG_FILE) > -1;
+        const startIndexOfVersion = fileContent.indexOf(VERSION_PART) + VERSION_PART.length;
+        const endIndexOfVersion = fileContent.indexOf('"', startIndexOfVersion);
+        if (isCordovaXmlConfigFile &&
+            startIndexOfVersion > -1 &&
+            endIndexOfVersion > -1) {
+            const result = fileContent.substring(0, startIndexOfVersion) +
+                this.context.version +
+                fileContent.substring(endIndexOfVersion);
+            return CordovaConfigXmlSetVersionTransformerResult.ofSuccess(result);
+        }
+        else {
+            return CordovaConfigXmlSetVersionTransformerResult.ofFailed();
+        }
+    }
+}
+exports.CordovaConfigXmlSetVersionTransformer = CordovaConfigXmlSetVersionTransformer;
+class CordovaConfigXmlSetVersionTransformerResult {
+    constructor(fileContent) {
+        if (fileContent)
+            this.fileContent = fileContent;
+    }
+    static ofSuccess(fileContent) {
+        return new CordovaConfigXmlSetVersionTransformerResult(fileContent);
+    }
+    static ofFailed() {
+        return new CordovaConfigXmlSetVersionTransformerResult();
+    }
+    success() {
+        return this.fileContent != undefined;
+    }
+    getUpdatedContent() {
+        if (!this.success() || !this.fileContent) {
+            throw new Error("cannot get updated content of un-success transformer result");
+        }
+        return this.fileContent;
+    }
+}
+
 
 /***/ }),
 
@@ -3041,6 +3126,9 @@ const ADD_JS_AFTER = "}),!1)";
 class ReactAppJsToCordovaTransformer {
     transform(content) {
         return ReactAppJsToCordovaTransformer.processJsFile(content);
+    }
+    acceptedFileExtensions() {
+        return ['js'];
     }
     static processJsFile(jsFileContent) {
         const fileContentAsList = jsFileContent.split(";");

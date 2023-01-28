@@ -5,6 +5,14 @@ inputs:
     description: 'Folder where the react app build is located'
     required: false
     default: 'dist'
+  transformers:
+    description: '"reactjs" | "reacthtml" | "cordovaconfig", by default it will applies reactjs and reacthtml '
+    required: false
+    default: 'reactjs,reacthtml'
+  cordova-app-version:
+    description: 'the cordova app`s version applies with the "cordovaconfig" transformer'
+    required: false
+
 runs:
   using: 'node16'
   main: 'dist/index.js'

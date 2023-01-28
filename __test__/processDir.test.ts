@@ -18,6 +18,11 @@ const expectHtmlFragment = "<script defer=\"defer\" src=\"index.js?9b34bd6a7b5c1
     "<link href=\"main.74262c1b98c22c8c8769.css?9b34bd6a7b5c1be8c603\" rel=\"stylesheet\"></head>" +
     "<div id=\"app-container\"></div></html>"
 
+const expectCordovaConfig = "<?xml version='1.0' encoding='utf-8'?>\n" +
+    "<widget\n" +
+    "        id=\"com.kpt.app\" version=\"0.2.5\"\n" +
+    "        xmlns=\"http://www.w3.org/ns/widgets\""
+
 const TEST_DIR_PATH = path.resolve("__test__") + "/"
 
 test("should refactor react js code into cordova code", function () {
@@ -25,7 +30,7 @@ test("should refactor react js code into cordova code", function () {
 
     fs.cpSync(TEST_DIR_PATH + "data/js", "tmp", {recursive: true})
 
-    processDir("tmp")
+    processDir("tmp", ["reactjs", "reacthtml"])
 
     const file = fs.readFileSync("tmp/fragment.js").toString()
     expect(file.endsWith(expectDevFragmentCodeReworked)).toBeTruthy()
@@ -38,7 +43,7 @@ test("should refactor react prod js code into cordova code", function () {
 
     fs.cpSync(TEST_DIR_PATH + "data/js", "tmp", {recursive: true})
 
-    processDir("tmp")
+    processDir("tmp", ["reactjs", "reacthtml"])
 
     const file = fs.readFileSync("tmp/prod_fragment.js").toString()
     expect(file.endsWith(expectProdFragmentCodeReworked)).toBeTruthy()
@@ -50,10 +55,24 @@ test("should refactor react app html code into cordova code", function () {
 
     fs.cpSync(TEST_DIR_PATH + "data/html", "tmp", {recursive: true})
 
-    processDir("tmp")
+    processDir("tmp", ["reactjs", "reacthtml"])
 
     const file = fs.readFileSync("tmp/index.html").toString()
     expect(file.endsWith(expectHtmlFragment)).toBeTruthy()
+    cleanTmp()
+})
+
+test("should put version into cordova config file", function () {
+    cleanTmp()
+
+    fs.cpSync(TEST_DIR_PATH + "data/cordovaconf", "tmp", {recursive: true})
+
+    processDir("tmp", ["cordovaconfig", "reactjs"], "0.2.5")
+
+    const file = fs.readFileSync("tmp/config.xml").toString()
+    console.log(file)
+    console.log(expectCordovaConfig)
+    expect(file.startsWith(expectCordovaConfig)).toBeTruthy()
     cleanTmp()
 })
 

@@ -14,6 +14,10 @@ export class ReactAppJsToCordovaTransformer implements Transformer {
         return ReactAppJsToCordovaTransformer.processJsFile(content)
     }
 
+    acceptedFileExtensions(): string[] {
+        return ['js'];
+    }
+
     private static processJsFile(jsFileContent: string): ReactAppJsToCordovaTransformerResult {
         const fileContentAsList: string[] = jsFileContent.split(";")
         const filteredContent = {}
